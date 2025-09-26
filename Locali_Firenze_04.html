@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Locali Firenze</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; justify-content: center; }
+    .filter-buttons { text-align: center; margin: 10px 0; }
+    input, button, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1em; }
+    button { background: #ff7e5f; color: white; cursor: pointer; border: none; transition: 0.3s; }
+    button:hover { background: #eb5757; }
+    .list { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+      gap: 10px; 
+      max-height: 70vh; 
+      overflow-y: auto; 
+      padding-right: 5px; 
+    }
+    .card { 
+      background: white; padding: 15px; border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card div {
+      max-width: 220px;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+    .card a { color: #0077cc; text-decoration: none; }
+  .actions {
+  display: flex;
+  flex-direction: column; /* i bottoni vanno in verticale */
+  gap: 8px;               /* spazio verticale tra i bottoni */
+  align-items: center;    /* li centra orizzontalmente */
+}
+
+    .remove { background: #ff4d4d; border: none; border-radius: 50%; color: white; font-weight: bold; width: 30px; height: 30px; cursor: pointer; }
+    .edit { background: #ffa500; border: none; border-radius: 50%; color: white; font-weight: bold; width: 30px; height: 30px; cursor: pointer; }
+.comment {
+  background: #ff9966; /* puoi cambiare colore */
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+    .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
+      display:none; justify-content:center; align-items:center; }
+    .popup { background:white; padding:20px; border-radius:10px; max-width:300px; text-align:center; }
+    .menu { position: relative; display: inline-block; }
+    .menu-content {
+      display: none; position: absolute; right:0;
+      background: white; border: 1px solid #ccc;
+      border-radius: 8px; padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 100;
+    }
+    .menu-content button {
+      display: block; width: 100%; margin: 5px 0; 
+      background: #ff7e5f; color: white;
+    }
+    .menu.show .menu-content { display: block; }
+
+    /* --- Dropdown multi-select --- */
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-btn {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      min-width: 150px;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 100;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .dropdown.show .dropdown-content { display: block; }
+    .dropdown-content label { display: block; cursor: pointer; margin: 3px 0; }
+
+    .tipo-wrapper { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+    .tipo-wrapper button { background: #ff4d4d; border-radius: 6px; padding: 5px 10px; }
+.edit, .remove, .comment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+  </style>
+</head>
+<body>
+  <h1>Locali Firenze</h1>
+
+  <!-- FILTRI -->
+  <div class="filters">
+    <div class="dropdown" id="zonaFilter"></div>
+    <div class="dropdown" id="tipoFilter"></div>
+    <div class="dropdown" id="consigliatoFilter"></div>
+    <div class="dropdown" id="glutenFilter"></div>
+  </div>
+  <div class="filter-buttons">
+    <button onclick="filtra()">Filtra</button><br><br>
+    <button onclick="randomLocale()">Casuale 🎲</button>
+<button onclick="vaiAlModulo()">Aggiungi ➕</button>
+    <div class="menu">
+      <button onclick="toggleMenu(event)">⋮ Altro</button>
+      <div id="extraMenu" class="menu-content">
+
+        <button onclick="condividiLista();chiudiMenu()">Condividi lista 📤</button>
+        <input type="file" id="fileInput" style="display:none" onchange="importaCSV(event)">
+        <button onclick="document.getElementById('fileInput').click();chiudiMenu()">Importa lista 📥</button>
+        <button onclick="richiediLista();chiudiMenu()">Richiedi lista 📲</button>
+        <button onclick="resetLista();chiudiMenu()">Reset lista 🔄</button>
+      </div>
+    </div>
+  </div>
+<!-- BARRA DI RICERCA -->
+<div class="filters">
+  <input type="text" id="searchInput" placeholder="Cerca locale..." oninput="cercaPerNome()">
+</div>
+
+  <!-- LISTA -->
+  <div class="list" id="lista"></div>
+
+  <!-- FORM AGGIUNTA -->
+  <h2 id="formAggiungi">Aggiungi Locale</h2>
+  <div class="filters">
+    <input type="text" id="nome" placeholder="Nome locale">
+    <input type="text" id="zona" placeholder="Zona (es. Santo Spirito)">
+    <div id="tipo-container">
+      <div class="tipo-wrapper">
+        <select class="tipo" onchange="aggiornaOpzioniTipo()">
+          <option value="">Tipo</option>
+          <option>Pizzeria</option>
+          <option>Ristorante</option>
+          <option>Aperitivo</option>
+          <option>Cocktail bar</option>
+        </select>
+      </div>
+      <button type="button" onclick="aggiungiCampoTipo()">+</button>
+    </div>
+    <input type="text" id="link" placeholder="Link Google Maps">
+    <select id="voto">
+      <option value="">Voto</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+    </select>
+    <select id="glutenFree">
+      <option value="">Gluten free?</option>
+      <option value="si">Sì</option>
+      <option value="no">No</option>
+    </select>
+    <textarea id="commento" placeholder="Commento sul locale" rows="2" style="width:100%;"></textarea>
+    <button onclick="aggiungi()">Aggiungi</button>
+  </div>
+
+  <!-- POPUP IMPORT -->
+  <div class="overlay" id="overlay">
+    <div class="popup">
+      <h3>Scegli consiglieri da importare</h3>
+      <div id="checkboxes"></div>
+      <button onclick="confermaImport()">Importa selezionati</button>
+      <button onclick="chiudiPopup()">Annulla</button>
+    </div>
+  </div>
+
+  <!-- POPUP LOCALE AGGIUNTO -->
+  <div class="overlay" id="popupAggiunto">
+    <div class="popup">
+      <h3>Locale aggiunto!</h3>
+      <button onclick="chiudiPopupAggiunto()">OK</button>
+    </div>
+  </div>
+
+  <!-- POPUP COMMENTO -->
+  <div class="overlay" id="popupCommento">
+    <div class="popup">
+      <h3>Commento</h3>
+      <p id="testoCommento"></p>
+      <button onclick="chiudiCommento()">Chiudi</button>
+    </div>
+  </div>
+
+  <script>
+    let myName = localStorage.getItem("myName");
+    if (!myName) {
+      myName = prompt("Inserisci nome e cognome:");
+      if (myName) localStorage.setItem("myName", myName);
+      else myName = "Anonimo";
+    }
+
+    let locali = [];
+
+    function salva() { localStorage.setItem("locali", JSON.stringify(locali)); }
+    function carica() { const dati = localStorage.getItem("locali"); if (dati) locali = JSON.parse(dati); }
+
+    const tipiDisponibili = ["Pizzeria","Ristorante","Aperitivo","Cocktail bar"];
+
+    function aggiungiCampoTipo() {
+      const container = document.getElementById("tipo-container");
+      const selects = container.querySelectorAll("select");
+      if (selects.length >= 4) {
+        alert("Puoi aggiungere al massimo 4 tipi");
+        return;
+      }
+      const div = document.createElement("div");
+      div.className = "tipo-wrapper";
+      div.innerHTML = `
+        <select class="tipo" onchange="aggiornaOpzioniTipo()"></select>
+        <button type="button" onclick="rimuoviCampoTipo(this)">❌</button>
+      `;
+      container.insertBefore(div, container.lastElementChild);
+      aggiornaOpzioniTipo();
+    }
+function vaiAlModulo() {
+  document.getElementById("formAggiungi").scrollIntoView({ behavior: "smooth" });
+}
+
+    function rimuoviCampoTipo(btn) {
+      btn.parentElement.remove();
+      aggiornaOpzioniTipo();
+    }
+
+    function aggiornaOpzioniTipo() {
+      const selects = document.querySelectorAll("#tipo-container select");
+      const selezionati = [...selects].map(s => s.value).filter(v => v);
+      selects.forEach(select => {
+        const valoreAttuale = select.value;
+        select.innerHTML = `<option value="">Tipo</option>` +
+          tipiDisponibili
+            .filter(t => !selezionati.includes(t) || t === valoreAttuale)
+            .map(t => `<option ${t===valoreAttuale?"selected":""}>${t}</option>`)
+            .join("");
+      });
+    }
+
+    function creaDropdown(id, titolo, valori) {
+      const unici = [...new Set(valori.flatMap(v => v.split("+")))].filter(v => v);
+      const div = document.getElementById(id);
+      div.innerHTML = `
+        <div class="dropdown-btn" data-titolo="${titolo}" onclick="toggleDropdown('${id}', event)">${titolo}</div>
+        <div class="dropdown-content">
+          <label><input type="checkbox" value="__ALL__" checked onchange="selezionaTutti('${id}', this)"> Tutti</label>
+          ${unici.map(v => `<label><input type="checkbox" value="${v}" onchange="aggiornaTesto('${id}')"> ${v}</label>`).join("")}
+        </div>
+      `;
+    }
+// --- Ricerca per nome ---
+function cercaPerNome() {
+  const query = document.getElementById("searchInput").value.toLowerCase().trim();
+  const filtrati = locali.filter(l => l.nome.toLowerCase().includes(query));
+  mostra(filtrati);
+}
+
+    function aggiornaFiltri() {
+      const zone = locali.map(l => l.zona);
+      const tipi = locali.map(l => l.tipo);
+      const cons = locali.map(l => l.consigliatoDa || "—");
+      const gf = ["si","no"];
+      creaDropdown("zonaFilter", "Tutte le zone", zone);
+      creaDropdown("tipoFilter", "Tutti i tipi", tipi);
+      creaDropdown("consigliatoFilter", "Tutti i consiglieri", cons);
+      creaDropdown("glutenFilter", "Gluten free", gf);
+    }
+
+    function toggleDropdown(id, event) {
+      event.stopPropagation();
+      document.querySelectorAll(".dropdown").forEach(d => { if (d.id !== id) d.classList.remove("show"); });
+      document.getElementById(id).classList.toggle("show");
+    }
+
+    function aggiornaTesto(id) {
+      const btn = document.querySelector(`#${id} .dropdown-btn`);
+      const selezionati = getSelezionati(id).filter(v => v !== "__ALL__");
+      if (selezionati.length === 0) { btn.textContent = btn.dataset.titolo; document.querySelector(`#${id} input[value="__ALL__"]`).checked = true; }
+      else if (selezionati.length === 1) { btn.textContent = selezionati[0]; document.querySelector(`#${id} input[value="__ALL__"]`).checked = false; }
+      else { btn.textContent = selezionati.length + " selezionati"; document.querySelector(`#${id} input[value="__ALL__"]`).checked = false; }
+    }
+    function selezionaTutti(id) {
+      const inputs = document.querySelectorAll(`#${id} .dropdown-content input[type="checkbox"]`);
+      inputs.forEach(cb => { if (cb.value !== "__ALL__") cb.checked = false; });
+      aggiornaTesto(id);
+    }
+
+    document.addEventListener("click", function(e) {
+      if (!e.target.closest(".dropdown")) document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+      if (!e.target.closest(".menu")) document.querySelectorAll(".menu").forEach(m => m.classList.remove("show"));
+    });
+
+    function mostra(lista = locali) {
+      aggiornaFiltri();
+      const c = document.getElementById("lista");
+      c.innerHTML = "";
+      lista.forEach((loc, i) => {
+        c.innerHTML += `
+          <div class="card">
+            <div>
+              <strong>${loc.nome}</strong> ${loc.glutenFree==="si" ? "🌾🚫" : ""}<br>
+              Zona: ${loc.zona} <br>
+              Tipo: ${loc.tipo} <br>
+              Voto: ${loc.voto || "—"}<br>
+              Consigliato da: ${loc.consigliatoDa || "—"}<br>
+              <a href="${loc.link}" target="_blank">Link</a>
+            </div>
+            <div class="actions">
+              <button class="edit" onclick="modifica(${i})">✎</button>
+              <button class="remove" onclick="rimuovi(${i})">×</button>
+           ${loc.commento ? `<button class="comment" title="Vedi commento" onclick="mostraCommento(${i})">💬</button>` : ""}
+
+            </div>
+          </div>`;
+      });
+    }
+
+    // --- Aggiungi ---
+    function aggiungi() {
+      const nome = document.getElementById("nome").value.trim();
+      const zona = document.getElementById("zona").value.trim();
+      const tipoElements = document.querySelectorAll("#tipo-container select");
+      const tipi = [...tipoElements].map(s => s.value).filter(v => v);
+      const link = document.getElementById("link").value.trim();
+      const voto = document.getElementById("voto").value;
+      const glutenFree = document.getElementById("glutenFree").value;
+      const commento = document.getElementById("commento").value.trim();
+      if (!nome || !zona || tipi.length === 0) { alert("Devi inserire Nome, Zona e almeno un Tipo!"); return; }
+      locali.push({nome, zona, tipo: tipi.join("+"), link, voto, consigliatoDa: myName, glutenFree, commento});
+      salva(); mostra();
+      document.getElementById("popupAggiunto").style.display = "flex";
+    }
+    function chiudiPopupAggiunto() {
+      document.getElementById("popupAggiunto").style.display = "none";
+    }
+
+    // --- Modifica ---
+function modifica(i) {
+  const loc = locali[i];
+  const tipi = loc.tipo.split("+"); 
+  const card = document.querySelectorAll(".card")[i];
+
+  let tipoHTML = tipi.map((t, idx) => `
+    <div class="tipo-wrapper">
+      <select class="edit-tipo" data-index="${idx}">
+        <option value="">Tipo</option>
+        <option ${t==="Pizzeria"?"selected":""}>Pizzeria</option>
+        <option ${t==="Ristorante"?"selected":""}>Ristorante</option>
+        <option ${t==="Aperitivo"?"selected":""}>Aperitivo</option>
+        <option ${t==="Cocktail bar"?"selected":""}>Cocktail bar</option>
+      </select>
+      ${idx>0 ? `<button type="button" onclick="this.parentElement.remove()">❌</button>` : ""}
+    </div>
+  `).join("");
+
+  card.innerHTML = `
+    <div>
+      <label>Nome:<br><input type="text" id="edit-nome-${i}" value="${loc.nome}"></label><br>
+      <label>Zona:<br><input type="text" id="edit-zona-${i}" value="${loc.zona}"></label><br>
+      <label>Tipo:<br>
+        <div id="edit-tipo-container-${i}">
+          ${tipoHTML}
+        </div>
+        <button type="button" onclick="aggiungiCampoTipoEdit(${i})">+</button>
+      </label><br>
+      <label>Link:<br><input type="text" id="edit-link-${i}" value="${loc.link}"></label><br>
+      <label>Voto:<br>
+        <select id="edit-voto-${i}">
+          <option value="" ${!loc.voto?"selected":""}></option>
+          <option value="1" ${loc.voto==="1"?"selected":""}>1</option>
+          <option value="2" ${loc.voto==="2"?"selected":""}>2</option>
+          <option value="3" ${loc.voto==="3"?"selected":""}>3</option>
+          <option value="4" ${loc.voto==="4"?"selected":""}>4</option>
+          <option value="5" ${loc.voto==="5"?"selected":""}>5</option>
+        </select>
+      </label><br>
+      <label>Gluten free:<br>
+        <select id="edit-gf-${i}">
+          <option value="" ${!loc.glutenFree?"selected":""}></option>
+          <option value="si" ${loc.glutenFree==="si"?"selected":""}>Sì</option>
+          <option value="no" ${loc.glutenFree==="no"?"selected":""}>No</option>
+        </select>
+      </label><br>
+      <label>Consigliato da:<br><input type="text" id="edit-cons-${i}" value="${loc.consigliatoDa}"></label><br>
+      <label>Commento:<br><textarea id="edit-commento-${i}" rows="2" style="width:100%">${loc.commento || ""}</textarea></label>
+    </div>
+    <div class="actions">
+      <button class="edit" onclick="salvaModifica(${i})">💾</button>
+    </div>`;
+}
+
+function aggiungiCampoTipoEdit(i) {
+  const container = document.getElementById(`edit-tipo-container-${i}`);
+  const selects = container.querySelectorAll("select");
+  if (selects.length >= 4) {
+    alert("Puoi aggiungere al massimo 4 tipi");
+    return;
+  }
+  const div = document.createElement("div");
+  div.className = "tipo-wrapper";
+  div.innerHTML = `
+    <select class="edit-tipo">
+      <option value="">Tipo</option>
+      <option>Pizzeria</option>
+      <option>Ristorante</option>
+      <option>Aperitivo</option>
+      <option>Cocktail bar</option>
+    </select>
+    <button type="button" onclick="this.parentElement.remove()">❌</button>
+  `;
+  container.appendChild(div);
+}
+
+function salvaModifica(i) {
+  const tipoElements = document.querySelectorAll(`#edit-tipo-container-${i} select`);
+  const tipi = [...tipoElements].map(s => s.value).filter(v => v);
+
+  locali[i] = {
+    nome: document.getElementById(`edit-nome-${i}`).value,
+    zona: document.getElementById(`edit-zona-${i}`).value,
+    tipo: tipi.join("+"),
+    link: document.getElementById(`edit-link-${i}`).value,
+    voto: document.getElementById(`edit-voto-${i}`).value,
+    glutenFree: document.getElementById(`edit-gf-${i}`).value,
+    consigliatoDa: document.getElementById(`edit-cons-${i}`).value,
+    commento: document.getElementById(`edit-commento-${i}`).value
+  };
+  salva(); mostra();
+}
+
+    // --- Rimuovi ---
+    function rimuovi(i) {
+      if(confirm("Vuoi eliminare questo locale?")) {
+        locali.splice(i,1); salva(); mostra();
+      }
+    }
+
+    // --- Commento ---
+    function mostraCommento(i) {
+      document.getElementById("testoCommento").textContent = locali[i].commento || "Nessun commento";
+      document.getElementById("popupCommento").style.display = "flex";
+    }
+    function chiudiCommento() {
+      document.getElementById("popupCommento").style.display = "none";
+    }
+
+    // --- Filtra ---
+    function getSelezionati(id) {
+      return [...document.querySelectorAll(`#${id} .dropdown-content input:checked`)]
+        .map(cb => cb.value)
+        .filter(v => v !== "__ALL__");
+    }
+    function filtra() {
+      const zone = getSelezionati("zonaFilter");
+      const tipi = getSelezionati("tipoFilter");
+      const cons = getSelezionati("consigliatoFilter");
+      const gf = getSelezionati("glutenFilter");
+      const f = locali.filter(l =>
+        (zone.length === 0 || zone.includes(l.zona)) &&
+        (tipi.length === 0 || tipi.some(t => l.tipo.split("+").includes(t))) &&
+        (cons.length === 0 || cons.includes(l.consigliatoDa || "—")) &&
+        (gf.length === 0 || gf.includes(l.glutenFree))
+      );
+      mostra(f);
+    }
+
+    // --- Random ---
+    function randomLocale() {
+      if(locali.length===0){alert("Nessun locale");return;}
+      const r = locali[Math.floor(Math.random()*locali.length)];
+      alert(`Prova: ${r.nome} (${r.tipo} in zona ${r.zona})`);
+    }
+
+    // --- Import/Export ---
+    let datiImport = [];
+    function importaCSV(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const text = e.target.result.trim();
+        const lines = text.split("\n").slice(1);
+        datiImport = lines.map(line => {
+          const values = line.split(/[,;]/).map(v => v.replace(/^"|"$/g, "").trim());
+
+          if (values.length >= 8) {
+            const [nome, zona, tipo, link, voto, consigliatoDa, glutenFree, commento] = values;
+            return { nome, zona, tipo, link, voto, consigliatoDa: consigliatoDa || "—", glutenFree, commento };
+          }
+          return null;
+        }).filter(x => x);
+        const cons = [...new Set(datiImport.map(l=>l.consigliatoDa||"—"))];
+        const box = document.getElementById("checkboxes");
+        box.innerHTML = cons.map(c=>`<label><input type="checkbox" value="${c}" checked> ${c}</label>`).join("");
+        document.getElementById("overlay").style.display="flex";
+      };
+      reader.readAsText(file);
+    }
+    function confermaImport() {
+      const selezionati = [...document.querySelectorAll("#checkboxes input:checked")].map(cb=>cb.value);
+      datiImport.forEach(l=>{
+        if (selezionati.includes(l.consigliatoDa||"—")) {
+          const duplicato = locali.some(ex=>ex.nome===l.nome && ex.zona===l.zona && ex.consigliatoDa===l.consigliatoDa);
+          if (!duplicato) locali.push(l);
+        }
+      });
+      salva(); mostra(); chiudiPopup();
+    }
+    function chiudiPopup(){ document.getElementById("overlay").style.display="none"; }
+
+    // --- Condivisione/Reset ---
+   function condividiLista() {
+  const header = "Nome,Zona,Tipo,Link,Voto,ConsigliatoDa,GlutenFree,Commento\n";
+  const rows = locali.map(l => `"${l.nome}","${l.zona}","${l.tipo}","${l.link}","${l.voto || ""}","${l.consigliatoDa || ""}","${l.glutenFree || ""}","${l.commento || ""}"`);
+  const csv = header + rows.join("\n");
+  const filename = "locali_" + myName.replace(/\s+/g, "_") + ".csv";
+  const blob = new Blob([csv], { type: "text/csv" });
+
+  if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: "text/csv" })] })) {
+    const file = new File([blob], filename, { type: "text/csv" });
+    navigator.share({
+      files: [file],
+      title: "Lista Locali",
+      text: "Ecco la mia lista di locali 📎"
+    }).catch(err => console.log("Condivisione annullata:", err));
+  } else {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+}
+
+    function richiediLista() {
+      const text = encodeURIComponent("Ciao 👋 puoi condividere con me la tua lista locali?");
+      window.open(`https://wa.me/?text=${text}`, "_blank");
+    }
+    function resetLista() {
+      if (confirm("Vuoi davvero resettare la lista ai valori iniziali?")) {
+        localStorage.removeItem("locali"); location.reload();
+      }
+    }
+
+    // --- Menu ---
+    function toggleMenu(event) {
+      event.stopPropagation(); document.querySelector(".menu").classList.toggle("show");
+    }
+    function chiudiMenu() {
+      document.querySelector(".menu").classList.remove("show");
+    }
+
+    carica(); mostra(); aggiornaOpzioniTipo();
+  </script>
+</body>
+</html>
