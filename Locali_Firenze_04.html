@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -351,13 +352,7 @@ function cercaPerNome() {
   creaDropdown("consigliatoFilter", "Tutti i consiglieri", consWithMine);
   creaDropdown("glutenFilter", "Gluten free", gf);
 
-  // seleziono automaticamente "Miei locali"
-  const inputMiei = document.querySelector(`#consigliatoFilter input[value="Miei locali"]`);
-  if (inputMiei) {
-    inputMiei.checked = true;
-    aggiornaTesto("consigliatoFilter");
-  }
-}
+ }
 
 
     function toggleDropdown(id, event) {
@@ -399,12 +394,12 @@ function cercaPerNome() {
               Consigliato da: ${loc.consigliatoDa || "—"}<br>
               <a href="${loc.link}" target="_blank">Link</a>
             </div>
-            <div class="actions">
-              <button class="edit" onclick="modifica(${i})">✎</button>
-              <button class="remove" onclick="rimuovi(${i})">×</button>
-           ${loc.commento ? `<button class="comment" title="Vedi commento" onclick="mostraCommento(${i})">💬</button>` : ""}
+           <div class="actions">
+  <button class="edit" onclick="modifica(${i})">✎</button>
+  <button class="remove" onclick="rimuovi(${i})">×</button>
+  ${loc.commento ? `<button class="comment" title="Vedi commento" onclick='mostraCommento(${JSON.stringify(loc.commento)})'>💬</button>` : ""}
+</div>
 
-            </div>
           </div>`;
       });
     }
@@ -549,10 +544,12 @@ function salvaModifica(i) {
     }
 
     // --- Commento ---
-    function mostraCommento(i) {
-      document.getElementById("testoCommento").textContent = locali[i].commento || "Nessun commento";
-      document.getElementById("popupCommento").style.display = "flex";
-    }
+// --- Commento ---
+function mostraCommento(commento) {
+  document.getElementById("testoCommento").textContent = commento || "Nessun commento";
+  document.getElementById("popupCommento").style.display = "flex";
+}
+
     function chiudiCommento() {
       document.getElementById("popupCommento").style.display = "none";
     }
@@ -649,6 +646,7 @@ function salvaModifica(i) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
+
   }
 }
 
