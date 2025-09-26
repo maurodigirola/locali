@@ -151,6 +151,9 @@
           <option>Ristorante</option>
           <option>Aperitivo</option>
           <option>Cocktail bar</option>
+	<option>Paninoteca</option>
+
+
         </select>
       </div>
       <button type="button" onclick="aggiungiCampoTipo()">+</button>
@@ -209,7 +212,8 @@
     function salva() { localStorage.setItem("locali", JSON.stringify(locali)); }
     function carica() { const dati = localStorage.getItem("locali"); if (dati) locali = JSON.parse(dati); }
 
-    const tipiDisponibili = ["Pizzeria","Ristorante","Aperitivo","Cocktail bar"];
+    const tipiDisponibili = ["Pizzeria","Ristorante","Aperitivo","Cocktail bar","Paninoteca"];
+
 
     function aggiungiCampoTipo() {
       const container = document.getElementById("tipo-container");
@@ -360,6 +364,7 @@ function modifica(i) {
         <option ${t==="Ristorante"?"selected":""}>Ristorante</option>
         <option ${t==="Aperitivo"?"selected":""}>Aperitivo</option>
         <option ${t==="Cocktail bar"?"selected":""}>Cocktail bar</option>
+<option ${t==="Paninoteca"?"selected":""}>Paninoteca</option>
       </select>
       ${idx>0 ? `<button type="button" onclick="this.parentElement.remove()">❌</button>` : ""}
     </div>
@@ -566,4 +571,3 @@ function salvaModifica(i) {
   </script>
 </body>
 </html>
-
