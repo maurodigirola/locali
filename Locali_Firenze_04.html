@@ -379,30 +379,36 @@ function cercaPerNome() {
       if (!e.target.closest(".menu")) document.querySelectorAll(".menu").forEach(m => m.classList.remove("show"));
     });
 
-    function mostra(lista = locali) {
-      aggiornaFiltri();
-      const c = document.getElementById("lista");
-      c.innerHTML = "";
-      lista.forEach((loc, i) => {
-        c.innerHTML += `
-          <div class="card">
-            <div>
-              <strong>${loc.nome}</strong> ${loc.glutenFree==="si" ? "🌾🚫" : ""}<br>
-              Zona: ${loc.zona} <br>
-              Tipo: ${loc.tipo} <br>
-              Voto: ${loc.voto || "—"}<br>
-              Consigliato da: ${loc.consigliatoDa || "—"}<br>
-              <a href="${loc.link}" target="_blank">Link</a>
-            </div>
-           <div class="actions">
-  <button class="edit" onclick="modifica(${i})">✎</button>
-  <button class="remove" onclick="rimuovi(${i})">×</button>
-  ${loc.commento ? `<button class="comment" title="Vedi commento" onclick='mostraCommento(${JSON.stringify(loc.commento)})'>💬</button>` : ""}
-</div>
+function mostra(lista = locali) {
+  aggiornaFiltri();
+  const c = document.getElementById("lista");
+  c.innerHTML = "";
+  lista.forEach((loc, i) => {
+    c.innerHTML += `
+      <div class="card">
+        <div>
+          <strong>${loc.nome}</strong> ${loc.glutenFree==="si" ? "🌾🚫" : ""}<br>
+          Zona: ${loc.zona} <br>
+          Tipo: ${loc.tipo} <br>
+          Voto: ${loc.voto || "—"}<br>
+          Consigliato da: ${loc.consigliatoDa || "—"}<br>
+          <a href="${loc.link}" target="_blank">Link</a>
+        </div>
+        <div class="actions">
+          ${
+            loc.consigliatoDa === myName 
+              ? `
+                <button class="edit" onclick="modifica(${i})">✎</button>
+                <button class="remove" onclick="rimuovi(${i})">×</button>
+              `
+              : ""
+          }
+          ${loc.commento ? `<button class="comment" title="Vedi commento" onclick='mostraCommento(${JSON.stringify(loc.commento)})'>💬</button>` : ""}
+        </div>
+      </div>`;
+  });
+}
 
-          </div>`;
-      });
-    }
 
 async function aggiungi() {
   const nome = document.getElementById("nome").value.trim();
