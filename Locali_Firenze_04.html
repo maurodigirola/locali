@@ -415,8 +415,8 @@ function mostra(lista = locali) {
       (x.consigliatoDa || "—") === (loc.consigliatoDa || "—")
     );
 
-    const isOwner = loc.consigliatoDa === myName;
-    const isAdmin = myName === "Mauro Di Girolamo ";
+    const isOwner = (loc.consigliatoDa || "").trim() === myName.trim();
+    const isAdmin = myName.trim() === "Mauro Di Girolamo";
 
     c.innerHTML += `
       <div class="card" data-idx="${idxGlobale}">
@@ -588,8 +588,11 @@ async function salvaModifica(i) {
   const tipoElements = document.querySelectorAll(`#edit-tipo-container-${i} select`);
   const tipi = [...tipoElements].map(s => s.value).filter(v => v);
 
+  const locVecchio = locali[i]; // locale originale prima della modifica
+
   const aggiornato = {
     action: "update",
+    oldNome: locVecchio.nome,   // 👈 aggiungo il vecchio nome
     nome: document.getElementById(`edit-nome-${i}`).value,
     zona: document.getElementById(`edit-zona-${i}`).value,
     tipo: tipi.join("+"),
@@ -606,17 +609,15 @@ async function salvaModifica(i) {
       method: "POST",
       body: JSON.stringify(aggiornato)
     });
-    // prima spegni la ruzzola
     nascondiLoader();
-    // poi aggiorna lista
     await carica();
-    // e mostra popup
     document.getElementById("popupModificato").style.display = "flex";
   } catch (err) {
     console.error("Errore aggiornamento dati:", err);
     nascondiLoader();
   }
 }
+
 
 
 
