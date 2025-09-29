@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Locali Firenze</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f5f5f5; }
     h1 { text-align: center; margin-bottom: 20px; }
     .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; justify-content: center; }
     .filter-buttons { text-align: center; margin: 10px 0; }
@@ -33,9 +33,9 @@
     .card a { color: #0077cc; text-decoration: none; }
     .actions {
       display: flex;
-      flex-direction: column;  /* i bottoni vanno in verticale */
-      gap: 8px;                /* spazio verticale tra i bottoni */
-      align-items: center;     /* li centra orizzontalmente */
+      flex-direction: column; /* i bottoni vanno in verticale */
+      gap: 8px;               /* spazio verticale tra i bottoni */
+      align-items: center;    /* li centra orizzontalmente */
     }
     .remove { background: #ff4d4d; border: none; border-radius: 50%; color: white; font-weight: bold; width: 30px; height: 30px; cursor: pointer; }
     .edit { background: #ffa500; border: none; border-radius: 50%; color: white; font-weight: bold; width: 30px; height: 30px; cursor: pointer; }
@@ -49,12 +49,18 @@
       height: 30px;
       cursor: pointer;
     }
-    .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);
-      display:none; justify-content:center; align-items:center; }
-    .popup { background:white; padding:20px; border-radius:10px; max-width:300px; text-align:center; }
+    .overlay { 
+      position: fixed; 
+      top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.6);
+      display: none; 
+      justify-content: center; 
+      align-items: center; 
+    }
+    .popup { background: white; padding: 20px; border-radius: 10px; max-width: 300px; text-align: center; }
     .menu { position: relative; display: inline-block; }
     .menu-content {
-      display: none; position: absolute; right:0;
+      display: none; position: absolute; right: 0;
       background: white; border: 1px solid #ccc;
       border-radius: 8px; padding: 10px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
@@ -66,7 +72,7 @@
     }
     .menu.show .menu-content { display: block; }
 
-    /* Dropdown multi-select */
+    /* --- Dropdown multi-select --- */
     .dropdown { position: relative; display: inline-block; }
     .dropdown-btn {
       padding: 10px;
@@ -93,6 +99,7 @@
 
     .tipo-wrapper { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
     .tipo-wrapper button { background: #ff4d4d; border-radius: 6px; padding: 5px 10px; }
+
     .edit, .remove, .comment {
       display: flex;
       align-items: center;
@@ -177,11 +184,7 @@
     <input type="text" id="link" placeholder="Link Google">
     <select id="voto">
       <option value="">Voto</option>
-      <option>1</option>
-      <option>2</option>
-      <option>3</option>
-      <option>4</option>
-      <option>5</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
     </select>
     <select id="glutenFree">
       <option value="">Gluten free</option>
@@ -236,7 +239,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyf88jHp8K5e9eZEkoE6mtauZEnpGyiWOAv0rkgLPoPg4MbailJOAPuUuuYjbiVcjU/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyf88jHp8K5e9eZEkoE6mtauZEnpGyiWOAv0rkgLPoPg4MbailJOAPuUuuYjbiVcjUl/exec";
 
     let myName = localStorage.getItem("myName");
     if (!myName) {
@@ -265,63 +268,23 @@
     function mostraLoader() { document.getElementById("loader").style.display = "flex"; }
     function nascondiLoader() { document.getElementById("loader").style.display = "none"; }
 
-    function chiudiPopupModificato() {
-      document.getElementById("popupModificato").style.display = "none";
-    }
-    function chiudiPopupCancellato() {
-      document.getElementById("popupCancellato").style.display = "none";
-    }
-    function chiudiPopupAggiunto() {
-      document.getElementById("popupAggiunto").style.display = "none";
-    }
-    function condividiWhatsapp() {
-      const text = encodeURIComponent("Ciao 👋 prova anche tu questa app dei locali di Firenze! 🍕🍷\n\nhttps://maurodigirola.github.io/locali/Locali_Firenze_04.html");
-      window.open(`https://wa.me/?text=${text}`, "_blank");
-    }
-
-    /* --- MOSTRA --- */
-    function mostra(lista = locali) {
-      const c = document.getElementById("lista");
-      c.innerHTML = "";
-      lista.forEach((loc, i) => {
-        const isOwner = (loc.consigliatoDa || "").trim() === myName.trim();
-        const isAdmin = myName.trim() === "Mauro Di Girolamo";
-
-        c.innerHTML += `
-          <div class="card" data-idx="${i}">
-            <div>
-              <strong>${loc.nome}</strong> ${loc.glutenFree==="si" ? "🌾🚫" : ""}<br>
-              Zona: ${loc.zona}<br>
-              Tipo: ${loc.tipo}<br>
-              Voto: ${loc.voto || "-"}<br>
-              Consigliato da: ${loc.consigliatoDa || "-"}<br>
-              <a href="${loc.link}" target="_blank">Link</a>
-            </div>
-            <div class="actions">
-              ${
-                (isOwner || isAdmin) 
-                ? `
-                  <button class="edit" onclick="modifica(${i})">✎</button>
-                  <button class="remove" onclick="rimuovi(${i})">×</button>
-                `
-                : ""
-              }
-              ${loc.commento ? `<button class="comment" title="Vedi commento" onclick='mostraCommento(${JSON.stringify(loc.commento)})'>💬</button>` : ""}
-            </div>
-          </div>`;
-      });
-    }
+    function chiudiPopupAggiunto() { document.getElementById("popupAggiunto").style.display = "none"; }
+    function chiudiPopupModificato() { document.getElementById("popupModificato").style.display = "none"; }
+    function chiudiPopupCancellato() { document.getElementById("popupCancellato").style.display = "none"; }
+    function chiudiCommento() { document.getElementById("popupCommento").style.display = "none"; }
 
     function mostraCommento(commento) {
       document.getElementById("testoCommento").textContent = commento || "Nessun commento";
       document.getElementById("popupCommento").style.display = "flex";
     }
-    function chiudiCommento() {
-      document.getElementById("popupCommento").style.display = "none";
-    }
 
-    /* --- TODO: qui puoi reinserire filtra(), randomLocale(), aggiungi(), modifica(), rimuovi(), importaCSV() --- */
-    /* Li ho tagliati qui solo per spazio, ma li reinserisco se vuoi tutto anche con quelle funzioni complete. */
+    function toggleMenu(event) {
+      event.stopPropagation(); 
+      document.querySelector(".menu").classList.toggle("show");
+    }
+    function chiudiMenu() {
+      document.querySelector(".menu").classList.remove("show");
+    }
 
     carica();
   </script>
