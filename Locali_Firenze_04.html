@@ -956,8 +956,10 @@ function chiudiPopupAggiunto() {
   carica(); 
   </script>
 
+   
+
+  <!-- Service worker -->
   <script>
-  // registra il service worker PWA
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
@@ -966,28 +968,30 @@ function chiudiPopupAggiunto() {
     });
   }
   </script>
-	<script>
-// Mostra un pulsante personalizzato per installare la PWA
-let deferredPrompt;
 
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault(); // blocca il banner automatico
-  deferredPrompt = e; // lo salviamo per dopo
-  document.getElementById("installButton").style.display = "block"; // mostra il tuo pulsante
-});
+  <!-- Pulsante installa PWA -->
+  <script>
+  let deferredPrompt;
 
-async function installApp() {
-  if (!deferredPrompt) return; // se non disponibile, esci
-  deferredPrompt.prompt(); // mostra il popup di installazione
-  const { outcome } = await deferredPrompt.userChoice;
-  console.log(`Installazione: ${outcome}`); // 'accepted' o 'dismissed'
-  deferredPrompt = null; // reset
-  document.getElementById("installButton").style.display = "none"; // nascondi pulsante
-}
-</script>
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); // blocca il banner automatico
+    deferredPrompt = e; // salviamo per dopo
+    document.getElementById("installButton").style.display = "block"; // mostra il pulsante
+  });
+
+  async function installApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt(); // mostra popup
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`Installazione: ${outcome}`); // 'accepted' o 'dismissed'
+    deferredPrompt = null;
+    document.getElementById("installButton").style.display = "none";
+  }
+
+  window.addEventListener("appinstalled", () => {
+    alert("App LocaliFI installata correttamente 🎉");
+  });
+  </script>
 
 </body>
-
 </html>
-
-
