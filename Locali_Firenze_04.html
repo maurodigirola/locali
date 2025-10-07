@@ -153,6 +153,8 @@
     <button onclick="condividiWhatsapp();chiudiMenu()">Condividi con un amico 📲</button>
     <button style="background:#4CAF50;" onclick="window.location.href='https://maurodigirola.github.io/sondaggio/'; chiudiMenu()">Crea sondaggio 📝</button>
     <button style="background:#0077cc;" onclick="window.open('https://www.firenzetoday.it/eventi/', '_blank'); chiudiMenu()">Eventi a Firenze 📅</button>
+	  <button id="installButton" style="display:none; background:#ff7e5f;" onclick="installApp()">Installa app 📲</button>
+
   </div>
 </div>
 
@@ -964,7 +966,28 @@ function chiudiPopupAggiunto() {
     });
   }
   </script>
+	<script>
+// Mostra un pulsante personalizzato per installare la PWA
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); // blocca il banner automatico
+  deferredPrompt = e; // lo salviamo per dopo
+  document.getElementById("installButton").style.display = "block"; // mostra il tuo pulsante
+});
+
+async function installApp() {
+  if (!deferredPrompt) return; // se non disponibile, esci
+  deferredPrompt.prompt(); // mostra il popup di installazione
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`Installazione: ${outcome}`); // 'accepted' o 'dismissed'
+  deferredPrompt = null; // reset
+  document.getElementById("installButton").style.display = "none"; // nascondi pulsante
+}
+</script>
+
 </body>
 
 </html>
+
 
