@@ -329,18 +329,17 @@ async function carica() {
   try {
     mostraLoader();
 
-    // 1. carica i locali
-    const resLocali = await fetch(SCRIPT_URL_LOCALI);
+    // scarica locali e commenti in parallelo
+    const [resLocali, resCommenti] = await Promise.all([
+      fetch(SCRIPT_URL_LOCALI),
+      fetch(SCRIPT_URL_COMMENTI)
+    ]);
+
     locali = await resLocali.json();
-
-    // inizializza l’array commenti vuoto
-    locali.forEach(l => l.commenti = []);
-
-    // 2. carica i commenti
-    const resCommenti = await fetch(SCRIPT_URL_COMMENTI);
     const commenti = await resCommenti.json();
 
-    // 3. associa i commenti ai locali giusti
+    // associa i commenti ai locali
+    locali.forEach(l => l.commenti = []);
     commenti.forEach(c => {
       const loc = locali.find(l => l.nome === c.locale && l.zona === c.zona);
       if (loc) {
@@ -352,7 +351,6 @@ async function carica() {
       }
     });
 
-    // 4. mostra i locali con eventuali commenti
     mostra();
 
   } catch (err) {
@@ -890,12 +888,16 @@ if (span) {
 
 
     // --- Random ---
-    function randomLocale() {
-   if (locali.length === 0) { mostraPopup("Nessun locale", "Non ci sono locali disponibili."); return; }
+ function randomLocale() {
+  if (locali.length === 0) {
+    mostraPopup("Nessun locale", "Non ci sono locali disponibili.");
+    return;
+  }
 
-      const r = locali[Math.floor(Math.random()*locali.length)];
-   alert(`Prova: ${r.nome} (${r.tipo} in zona ${r.zona})`);
-    }
+  const r = locali[Math.floor(Math.random() * locali.length)];
+  mostraPopup("Locale casuale 🎲", `Prova: ${r.nome} (${r.tipo} in zona ${r.zona})`);
+}
+
 
     // --- Import/Export ---
     let datiImport = [];
@@ -1021,5 +1023,6 @@ function chiudiPopupAggiunto() {
 
 </body>
 </html>
+
 
 
