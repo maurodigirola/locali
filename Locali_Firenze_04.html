@@ -6,7 +6,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Locali Firenze</title>
+	<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff7e5f">
+
   <style>
+
+
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
     h1 { text-align: center; margin-bottom: 20px; }
     .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; justify-content: center; }
@@ -127,6 +132,7 @@
 
   </style>
 </head>
+	
 <body>
   <h1>Locali Firenze</h1>
 
@@ -945,7 +951,20 @@ if (span) {
 function chiudiPopupAggiunto() {
   document.getElementById("popupAggiunto").style.display = "none";
 }
-    carica(); 
+  carica(); 
+  </script>
+
+  <script>
+  // registra il service worker PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker registrato'))
+        .catch(err => console.log('Errore Service Worker:', err));
+    });
+  }
   </script>
 </body>
+
 </html>
+
