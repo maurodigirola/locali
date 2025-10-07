@@ -1,6 +1,6 @@
 {
-  "name": "Locali Firenze",
-  "short_name": "LocaliFI",
+  "name": "LocaliFi",
+  "short_name": "LocaliFi",
   "start_url": "./Locali_Firenze_04.html",
   "scope": "./",
   "display": "standalone",
@@ -19,3 +19,4 @@
     }
   ]
 }
+
