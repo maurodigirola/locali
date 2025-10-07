@@ -294,6 +294,15 @@
     <button onclick="chiudiCommenti()">Chiudi</button>
   </div>
 </div>
+	
+<!-- POPUP GENERICO -->
+<div class="overlay" id="popupGenerico">
+  <div class="popup">
+    <h3 id="popupTitolo"></h3>
+    <p id="popupMessaggio"></p>
+    <button onclick="chiudiPopupGenerico()">OK</button>
+  </div>
+</div>
 
   <script>
 // Endpoint esistente per i locali
@@ -352,6 +361,15 @@ async function carica() {
     nascondiLoader();
   }
 }
+function mostraPopup(titolo, messaggio) {
+  document.getElementById("popupTitolo").textContent = titolo || "";
+  document.getElementById("popupMessaggio").textContent = messaggio || "";
+  document.getElementById("popupGenerico").style.display = "flex";
+}
+
+function chiudiPopupGenerico() {
+  document.getElementById("popupGenerico").style.display = "none";
+}
 
 
 function chiudiPopupModificato() {
@@ -375,7 +393,7 @@ function chiudiPopupCancellato() {
       const container = document.getElementById("tipo-container");
       const selects = container.querySelectorAll("select");
       if (selects.length >= 4) {
-        alert("Puoi aggiungere al massimo 4 tipi");
+      mostraPopup("Limite raggiunto", "Puoi aggiungere al massimo 4 tipi");
         return;
       }
       const div = document.createElement("div");
@@ -546,7 +564,7 @@ async function aggiungi() {
   const commento = document.getElementById("commento").value.trim();
 
   if (!nome || !zona || tipi.length === 0) {
-    alert("Devi inserire Nome, Zona e almeno un Tipo!");
+    mostraPopup("Attenzione ⚠️", "Devi inserire Nome, Zona e almeno un Tipo!");
     return;
   }
 
@@ -658,7 +676,8 @@ function aggiungiCampoTipoEdit(i) {
   const container = document.getElementById(`edit-tipo-container-${i}`);
   const selects = container.querySelectorAll("select");
   if (selects.length >= 4) {
-    alert("Puoi aggiungere al massimo 4 tipi");
+   mostraPopup("Limite raggiunto", "Puoi aggiungere al massimo 4 tipi");
+
     return;
   }
   const div = document.createElement("div");
@@ -781,7 +800,7 @@ async function aggiungiCommento() {
 
   const testo = document.getElementById("nuovoCommento").value.trim();
   if (!testo) {
-    alert("Scrivi un commento prima di aggiungerlo!");
+ mostraPopup("Attenzione ⚠️", "Scrivi un commento prima di aggiungerlo!");
     return;
   }
 
@@ -829,7 +848,8 @@ if (span) {
 
   } catch (err) {
     console.error("Errore salvataggio commento:", err);
-    alert("Errore durante il salvataggio del commento!");
+ mostraPopup("Errore ❌", "Errore durante il salvataggio del commento!");
+
   } finally {
     nascondiLoader();
   }
@@ -871,9 +891,10 @@ if (span) {
 
     // --- Random ---
     function randomLocale() {
-      if(locali.length===0){alert("Nessun locale");return;}
+   if (locali.length === 0) { mostraPopup("Nessun locale", "Non ci sono locali disponibili."); return; }
+
       const r = locali[Math.floor(Math.random()*locali.length)];
-      alert(`Prova: ${r.nome} (${r.tipo} in zona ${r.zona})`);
+   alert(`Prova: ${r.nome} (${r.tipo} in zona ${r.zona})`);
     }
 
     // --- Import/Export ---
@@ -1000,4 +1021,5 @@ function chiudiPopupAggiunto() {
 
 </body>
 </html>
+
 
