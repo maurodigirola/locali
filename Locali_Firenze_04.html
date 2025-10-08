@@ -465,14 +465,20 @@ function cercaPerNome() {
 function aggiornaFiltri() {
   const zone = locali.map(l => l.zona);
   const tipi = locali.map(l => l.tipo);
-  const cons = [...new Set(locali.map(l => l.consigliatoDa || "—"))];
+  const cons = [...new Set(locali.map(l => (l.consigliatoDa || "—").trim()))];
   const gf = ["si", "no"];
 
-  // aggiungo "Miei locali" davanti a tutti
+  // aggiungo "Miei locali" davanti a tutti, evitando errori se myName è nullo
+  const safeName = (myName || "").trim().toLowerCase();
   const consWithMine = [
     "Miei locali",
-    ...cons.filter(c => c !== myName)
+    ...cons.filter(c => (c || "").trim().toLowerCase() !== safeName)
   ];
+
+  creaDropdown("zonaFilter", "Tutte le zone", zone);
+  creaDropdown("tipoFilter", "Tutti i tipi", tipi);
+  creaDropdown("consigliatoFilter", "Tutti i consiglieri", consWithMine);
+  creaDropdown("glutenFilter", "Gluten free", gf);
 }
 
     function toggleDropdown(id, event) {
@@ -1027,6 +1033,7 @@ function chiudiPopupAggiunto() {
 
 </body>
 </html>
+
 
 
 
