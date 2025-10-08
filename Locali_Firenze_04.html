@@ -341,7 +341,11 @@ async function carica() {
     // associa i commenti ai locali
     locali.forEach(l => l.commenti = []);
     commenti.forEach(c => {
-      const loc = locali.find(l => l.nome === c.locale && l.zona === c.zona);
+     const loc = locali.find(l =>
+  l.nome.trim().toLowerCase() === c.locale.trim().toLowerCase() &&
+  l.zona.trim().toLowerCase() === c.zona.trim().toLowerCase()
+);
+
       if (loc) {
         loc.commenti.push({
           autore: c.autore,
@@ -877,8 +881,12 @@ if (span) {
     (tipi.length === 0 || tipi.some(t => l.tipo.split("+").includes(t))) &&
     (
       cons.length === 0 ||
-      (cons.includes("Miei locali") && l.consigliatoDa === myName) ||
-      cons.includes(l.consigliatoDa || "—")
+      (
+  cons.includes("Miei locali") &&
+  (l.consigliatoDa || "").trim().toLowerCase() === myName.trim().toLowerCase()
+) ||
+cons.includes((l.consigliatoDa || "—").trim())
+
     ) &&
     (gf.length === 0 || gf.includes(l.glutenFree))
   );
@@ -1023,6 +1031,7 @@ function chiudiPopupAggiunto() {
 
 </body>
 </html>
+
 
 
 
