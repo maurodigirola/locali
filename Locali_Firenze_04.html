@@ -462,32 +462,18 @@ function cercaPerNome() {
   mostra(filtrati);
 }
 
- function aggiornaFiltri() {
+function aggiornaFiltri() {
   const zone = locali.map(l => l.zona);
   const tipi = locali.map(l => l.tipo);
-  const cons = [...new Set(locali.map(l => (l.consigliatoDa || "—").trim()))];
-  const gf = ["si","no"];
+  const cons = [...new Set(locali.map(l => l.consigliatoDa || "—"))];
+  const gf = ["si", "no"];
 
-  // aggiungo "Miei locali" davanti a tutti, evitando doppioni col mio nome
+  // aggiungo "Miei locali" davanti a tutti
   const consWithMine = [
     "Miei locali",
-    ...cons.filter(c => c.trim().toLowerCase() !== myName.trim().toLowerCase())
+    ...cons.filter(c => c !== myName)
   ];
-
-  creaDropdown("zonaFilter", "Tutte le zone", zone);
-  creaDropdown("tipoFilter", "Tutti i tipi", tipi);
-  creaDropdown("consigliatoFilter", "Tutti i consiglieri", consWithMine);
-  creaDropdown("glutenFilter", "Gluten free", gf);
 }
-
-
-  creaDropdown("zonaFilter", "Tutte le zone", zone);
-  creaDropdown("tipoFilter", "Tutti i tipi", tipi);
-  creaDropdown("consigliatoFilter", "Tutti i consiglieri", consWithMine);
-  creaDropdown("glutenFilter", "Gluten free", gf);
-
- }
-
 
     function toggleDropdown(id, event) {
       event.stopPropagation();
@@ -1041,6 +1027,7 @@ function chiudiPopupAggiunto() {
 
 </body>
 </html>
+
 
 
 
