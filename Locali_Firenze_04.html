@@ -464,18 +464,29 @@ function cercaPerNome() {
 }
 
 function aggiornaFiltri() {
-  const zone = locali.map(l => l.zona);
-  const tipi = locali.map(l => l.tipo);
-  const cons = [...new Set(locali.map(l => (l.consigliatoDa || "—").trim()))];
+  // Estrazione dei valori
+  const zone = [...new Set(locali.map(l => l.zona.trim()))]
+    .filter(z => z)
+    .sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' })); // ordine alfabetico
+
+  const tipi = [...new Set(locali.flatMap(l => l.tipo.split("+").map(t => t.trim())))]
+    .filter(t => t)
+    .sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+
+  const cons = [...new Set(locali.map(l => (l.consigliatoDa || "—").trim()))]
+    .filter(c => c)
+    .sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+
   const gf = ["si", "no"];
 
-  // aggiungo "Miei locali" davanti a tutti, evitando errori se myName è nullo
+  // Aggiungo "Miei locali" in testa sempre
   const safeName = (myName || "").trim().toLowerCase();
   const consWithMine = [
     "Miei locali",
     ...cons.filter(c => (c || "").trim().toLowerCase() !== safeName)
   ];
 
+  // Crea dropdown ordinati
   creaDropdown("zonaFilter", "Tutte le zone", zone);
   creaDropdown("tipoFilter", "Tutti i tipi", tipi);
   creaDropdown("consigliatoFilter", "Tutti i consiglieri", consWithMine);
@@ -1055,7 +1066,6 @@ function chiudiPopupAggiunto() {
 
 </body>
 </html>
-
 
 
 
