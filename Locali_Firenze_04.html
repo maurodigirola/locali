@@ -568,7 +568,10 @@ creaDropdown("zonaFilter", "Tutte le zone", zone.map(z => z === "__vicina__" ? "
       const btn = document.querySelector(`#${id} .dropdown-btn`);
       const selezionati = getSelezionati(id).filter(v => v !== "__ALL__");
       if (selezionati.length === 0) { btn.textContent = btn.dataset.titolo; document.querySelector(`#${id} input[value="__ALL__"]`).checked = true; }
-      else if (selezionati.length === 1) { btn.textContent = selezionati[0]; document.querySelector(`#${id} input[value="__ALL__"]`).checked = false; }
+     else if (selezionati.length === 1) { 
+  btn.textContent = selezionati[0] === "__vicina__" ? "📍 Zona più vicina" : selezionati[0];
+  document.querySelector(`#${id} input[value="__ALL__"]`).checked = false; 
+}
       else { btn.textContent = selezionati.length + " selezionati"; document.querySelector(`#${id} input[value="__ALL__"]`).checked = false; }
     }
     function selezionaTutti(id) {
@@ -1033,6 +1036,8 @@ if (span) {
   if (zone.includes("__vicina__")) {
     try {
       // Ottieni posizione attuale
+mostraLoader(); // 👈 mostra il loader prima di iniziare il calcolo
+
       const pos = await ottieniPosizioneUtente();
 console.log("📍 Mia posizione:", pos);
 console.log("📍 ZONE_CACHE:", ZONE_CACHE);
@@ -1069,6 +1074,8 @@ console.log("📍 Zona scelta:", best);
   }
 
   // Ora filtriamo come sempre
+nascondiLoader(); // 👈 nascondi il loader appena finito di calcolare la zona più vicina
+
   const f = locali.filter(l =>
     (zone.length === 0 || zone.includes(l.zona)) &&
     (tipi.length === 0 || tipi.some(t => l.tipo.split("+").includes(t))) &&
