@@ -1,6 +1,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -212,7 +214,7 @@
   <h2 id="formAggiungi">Aggiungi Locale</h2>
   <div class="filters">
     <input type="text" id="nome" placeholder="Nome locale">
-    <input type="text" id="zona" placeholder="Zona (es. Santo Spirito)">
+<input type="text" id="zona" placeholder="Zona (es. San Frediano)">
     <div id="tipo-container">
       <div class="tipo-wrapper">
         <select class="tipo" onchange="aggiornaOpzioniTipo()">
@@ -318,6 +320,54 @@ const SCRIPT_URL_LOCALI = "https://script.google.com/macros/s/AKfycbyf88jHp8K5e9
 
 // Endpoint nuovo per i commenti
 const SCRIPT_URL_COMMENTI = "https://script.google.com/macros/s/AKfycbz4TW5Ixv7uSjhtG_nsoDku0P0TxrbWsFFRmwNdWxxRJfCCW_lbwCP59CG6P9eysfRzVA/exec";
+
+
+const ZONE_API_URL = "https://script.google.com/macros/s/AKfycbxWxQQnGhd0nU1hpZoXOwmMm9E_jlO8FSjbRHj_x2x-pSItDxFKUahGpoq5yH9KG9pG/exec";
+let ZONE_CACHE = [];
+
+async function caricaZone() {
+  try {
+    const res = await fetch(ZONE_API_URL);
+    ZONE_CACHE = await res.json(); // [{zona, latitudine, longitudine}, ...]
+    ZONE_CACHE.sort((a,b) => a.zona.localeCompare(b.zona, 'it', {sensitivity: 'base'}));
+
+async function caricaZone() {
+  try {
+    const res = await fetch(ZONE_API_URL);
+    ZONE_CACHE = await res.json(); // [{zona, latitudine, longitudine}, ...]
+    ZONE_CACHE.sort((a,b) => a.zona.localeCompare(b.zona, 'it', {sensitivity: 'base'}));
+    console.log("Zone caricate:", ZONE_CACHE.length);
+  } catch (e) {
+    console.error('Errore nel caricamento delle zone:', e);
+  }
+}
+
+
+  } catch (e) {
+    console.error('Errore nel caricamento delle zone:', e);
+    const sel = document.getElementById('zona');
+    sel.innerHTML = `<option value="">(errore nel caricamento)</option>`;
+  }
+}
+
+function distanza(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function ottieniPosizioneUtente() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject("Geolocalizzazione non supportata.");
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      err => reject(err.message)
+    );
+  });
+}
 
 
     let myName = localStorage.getItem("myName");
@@ -452,17 +502,22 @@ function nascondiLoader() {
       });
     }
 
-    function creaDropdown(id, titolo, valori) {
-      const unici = [...new Set(valori.flatMap(v => v.split("+")))].filter(v => v);
-      const div = document.getElementById(id);
-      div.innerHTML = `
-        <div class="dropdown-btn" data-titolo="${titolo}" onclick="toggleDropdown('${id}', event)">${titolo}</div>
-        <div class="dropdown-content">
-          <label><input type="checkbox" value="__ALL__" checked onchange="selezionaTutti('${id}', this)"> Tutti</label>
-          ${unici.map(v => `<label><input type="checkbox" value="${v}" onchange="aggiornaTesto('${id}')"> ${v}</label>`).join("")}
-        </div>
-      `;
-    }
+function creaDropdown(id, titolo, valori) {
+  const unici = [...new Set(valori.flatMap(v => v.split("+")))].filter(v => v);
+  const div = document.getElementById(id);
+
+  div.innerHTML = `
+    <div class="dropdown-btn" data-titolo="${titolo}" onclick="toggleDropdown('${id}', event)">${titolo}</div>
+    <div class="dropdown-content">
+      <label><input type="checkbox" value="__ALL__" checked onchange="selezionaTutti('${id}', this)"> Tutti</label>
+      ${unici.map(v => {
+        const label = v === "__vicina__" ? "📍 Zona più vicina" : v; // 👈 qui cambiamo solo la label visiva
+        return `<label><input type="checkbox" value="${v}" onchange="aggiornaTesto('${id}')"> ${label}</label>`;
+      }).join("")}
+    </div>
+  `;
+}
+
 // --- Ricerca per nome ---
 function cercaPerNome() {
   const query = document.getElementById("searchInput").value.toLowerCase().trim();
@@ -471,10 +526,13 @@ function cercaPerNome() {
 }
 
 function aggiornaFiltri() {
-  // Estrazione dei valori
-  const zone = [...new Set(locali.map(l => l.zona.trim()))]
+  // Estrazione dei valori dal database locale
+  let zone = [...new Set(locali.map(l => l.zona.trim()))]
     .filter(z => z)
-    .sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' })); // ordine alfabetico
+    .sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+
+  // Aggiungi l’opzione "📍 Zona più vicina" in cima
+  zone.unshift("__vicina__");
 
   const tipi = [...new Set(locali.flatMap(l => l.tipo.split("+").map(t => t.trim())))]
     .filter(t => t)
@@ -493,8 +551,8 @@ function aggiornaFiltri() {
     ...cons.filter(c => (c || "").trim().toLowerCase() !== safeName)
   ];
 
-  // Crea dropdown ordinati
-  creaDropdown("zonaFilter", "Tutte le zone", zone);
+  // ✅ Crea dropdown con l’opzione “📍 Zona più vicina”
+creaDropdown("zonaFilter", "Tutte le zone", zone.map(z => z === "__vicina__" ? "__vicina__" : z));
   creaDropdown("tipoFilter", "Tutti i tipi", tipi);
   creaDropdown("consigliatoFilter", "Tutti i consiglieri", consWithMine);
   creaDropdown("glutenFilter", "Gluten free", gf);
@@ -575,6 +633,17 @@ function mostra(lista = locali) {
   });
 }
 
+// Funzione per ottenere latitudine e longitudine da una zona
+async function geocodificaZona(zona) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&q=${encodeURIComponent(zona + ', Firenze, Italia')}`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'it' } });
+  if (!res.ok) return { lat: "", lon: "" };
+  const data = await res.json();
+  if (Array.isArray(data) && data.length > 0) {
+    return { lat: data[0].lat, lon: data[0].lon };
+  }
+  return { lat: "", lon: "" };
+}
 
 async function aggiungi() {
   const nome = document.getElementById("nome").value.trim();
@@ -591,16 +660,50 @@ async function aggiungi() {
     return;
   }
 
-  const nuovo = {
-    action: "add",
-    nome, zona, tipo: tipi.join("+"), link, voto,
-    consigliatoDa: myName, glutenFree, commento
-  };
-
   try {
     mostraLoader();
 
-    // 1️⃣ salva il locale nel foglio dei locali
+// ✅ 1. Cerca coordinate già presenti nella cache delle zone
+let lat = "";
+let lon = "";
+
+const zonaTrovata = ZONE_CACHE.find(z => z.zona.trim().toLowerCase() === zona.trim().toLowerCase());
+
+if (zonaTrovata) {
+  lat = zonaTrovata.latitudine;
+  lon = zonaTrovata.longitudine;
+  console.log("Coordinate trovate nel foglio:", lat, lon);
+} else {
+  // Se non ci sono nel foglio, geocodifica e salva
+  const geo = await geocodificaZona(zona);
+  lat = geo.lat;
+  lon = geo.lon;
+  console.log("Coordinate ottenute con geocoding:", lat, lon);
+
+  // ✅ Salva la zona nuova nel foglio "Zone"
+  await fetch(ZONE_API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      zona: zona,
+      latitudine: lat,
+      longitudine: lon
+    })
+  });
+
+  // ✅ aggiorna cache locale (così da non dover ricaricare)
+  ZONE_CACHE.push({ zona: zona, latitudine: lat, longitudine: lon });
+}
+
+
+
+    // ✅ 2. Crea l'oggetto con lat/lon
+    const nuovo = {
+      action: "add",
+      nome, zona, tipo: tipi.join("+"), link, voto,
+      consigliatoDa: myName, glutenFree, commento,
+      latitudine: lat,
+      longitudine: lon
+    };    // 1️⃣ salva il locale nel foglio dei locali
     await fetch(SCRIPT_URL_LOCALI, {
       method: "POST",
       body: JSON.stringify(nuovo)
@@ -858,11 +961,11 @@ async function aggiungiCommento() {
   const loc = locali[localeSelezionato];
   if (!loc.commenti) loc.commenti = [];
 
-  const nuovo = {
-    autore: myName,
-    data: new Date().toLocaleString("it-IT"),
-    testo: testo
-  };
+const nuovo = {
+  autore: myName,
+  data: new Date().toLocaleString("it-IT"),
+  testo: testo
+};
 
   try {
     mostraLoader();
@@ -919,29 +1022,70 @@ if (span) {
         .map(cb => cb.value)
         .filter(v => v !== "__ALL__");
     }
-   function filtra() {
-  const zone = getSelezionati("zonaFilter");
+   async function filtra() {
+
+  let zone = getSelezionati("zonaFilter");
   const tipi = getSelezionati("tipoFilter");
   const cons = getSelezionati("consigliatoFilter");
   const gf = getSelezionati("glutenFilter");
 
+  // Se l’utente ha selezionato "Zona più vicina"
+  if (zone.includes("__vicina__")) {
+    try {
+      // Ottieni posizione attuale
+      const pos = await ottieniPosizioneUtente();
+console.log("📍 Mia posizione:", pos);
+console.log("📍 ZONE_CACHE:", ZONE_CACHE);
+
+      // Cerca la zona più vicina
+      let best = null;
+      let bestD = Infinity;
+
+      for (const z of ZONE_CACHE) {
+        const lat = parseFloat(z.latitudine);
+        const lon = parseFloat(z.longitudine);
+        if (!isFinite(lat) || !isFinite(lon)) continue;
+        const d = distanza(pos.lat, pos.lon, lat, lon);
+        if (d < bestD) {
+          bestD = d;
+          best = z;
+        }
+      }
+
+      if (best) {
+console.log("📍 Zona scelta:", best);
+
+        console.log("📍 Zona più vicina:", best.zona, `(${bestD.toFixed(2)} km)`);
+        zone = [best.zona]; // sostituisce "__vicina__" con la zona reale
+      } else {
+        mostraPopup("Errore ❌", "Non sono riuscito a determinare la zona più vicina.");
+        return;
+      }
+
+    } catch (e) {
+      mostraPopup("Errore ❌", "Geolocalizzazione negata o non disponibile.");
+      return;
+    }
+  }
+
+  // Ora filtriamo come sempre
   const f = locali.filter(l =>
     (zone.length === 0 || zone.includes(l.zona)) &&
     (tipi.length === 0 || tipi.some(t => l.tipo.split("+").includes(t))) &&
     (
       cons.length === 0 ||
       (
-  cons.includes("Miei locali") &&
-  (l.consigliatoDa || "").trim().toLowerCase() === myName.trim().toLowerCase()
-) ||
-cons.includes((l.consigliatoDa || "—").trim())
-
+        cons.includes("Miei locali") &&
+        (l.consigliatoDa || "").trim().toLowerCase() === myName.trim().toLowerCase()
+      ) ||
+      cons.includes((l.consigliatoDa || "—").trim())
     ) &&
     (gf.length === 0 || gf.includes(l.glutenFree))
   );
 
   mostra(f);
 }
+
 
 
     // --- Random ---
@@ -1038,6 +1182,7 @@ cons.includes((l.consigliatoDa || "—").trim())
 function chiudiPopupAggiunto() {
   document.getElementById("popupAggiunto").style.display = "none";
 }
+caricaZone();
   carica(); 
   </script>
 
