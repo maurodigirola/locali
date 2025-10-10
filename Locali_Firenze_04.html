@@ -1032,46 +1032,52 @@ if (span) {
   const cons = getSelezionati("consigliatoFilter");
   const gf = getSelezionati("glutenFilter");
 
-  // Se l’utente ha selezionato "Zona più vicina"
-  if (zone.includes("__vicina__")) {
-    try {
-      // Ottieni posizione attuale
-mostraLoader(); // 👈 mostra il loader prima di iniziare il calcolo
+// Se l’utente ha selezionato "Zona più vicina"
+if (zone.includes("__vicina__")) {
+  try {
+    mostraLoader(); // 👈 mostra loader mentre calcola
 
-      const pos = await ottieniPosizioneUtente();
-console.log("📍 Mia posizione:", pos);
-console.log("📍 ZONE_CACHE:", ZONE_CACHE);
+    // Ottieni posizione attuale
+    const pos = await ottieniPosizioneUtente();
+    console.log("📍 Mia posizione:", pos);
 
-      // Cerca la zona più vicina
-      let best = null;
-      let bestD = Infinity;
+    // Cerca la zona più vicina
+    let best = null;
+    let bestD = Infinity;
 
-      for (const z of ZONE_CACHE) {
-        const lat = parseFloat(z.latitudine);
-        const lon = parseFloat(z.longitudine);
-        if (!isFinite(lat) || !isFinite(lon)) continue;
-        const d = distanza(pos.lat, pos.lon, lat, lon);
-        if (d < bestD) {
-          bestD = d;
-          best = z;
-        }
+    for (const z of ZONE_CACHE) {
+      const lat = parseFloat(z.latitudine);
+      const lon = parseFloat(z.longitudine);
+      if (!isFinite(lat) || !isFinite(lon)) continue;
+      const d = distanza(pos.lat, pos.lon, lat, lon);
+      if (d < bestD) {
+        bestD = d;
+        best = z;
+      }
+    }
+
+    if (best) {
+      console.log("📍 Zona più vicina:", best.zona, `(${bestD.toFixed(2)} km)`);
+
+      // 👇 Rimuovi "__vicina__" e aggiungi la zona trovata all'elenco
+      zone = zone.filter(z => z !== "__vicina__");
+      if (!zone.includes(best.zona)) {
+        zone.push(best.zona);
       }
 
-      if (best) {
-console.log("📍 Zona scelta:", best);
-
-        console.log("📍 Zona più vicina:", best.zona, `(${bestD.toFixed(2)} km)`);
-        zone = [best.zona]; // sostituisce "__vicina__" con la zona reale
-      } else {
-        mostraPopup("Errore ❌", "Non sono riuscito a determinare la zona più vicina.");
-        return;
-      }
-
-    } catch (e) {
-      mostraPopup("Errore ❌", "Geolocalizzazione negata o non disponibile.");
+    } else {
+      mostraPopup("Errore ❌", "Non sono riuscito a determinare la zona più vicina.");
       return;
     }
+
+  } catch (e) {
+    mostraPopup("Errore ❌", "Geolocalizzazione negata o non disponibile.");
+    return;
+  } finally {
+    nascondiLoader(); // 👈 nascondi loader sempre
   }
+}
+
 
   // Ora filtriamo come sempre
 nascondiLoader(); // 👈 nascondi il loader appena finito di calcolare la zona più vicina
