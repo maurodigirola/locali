@@ -562,51 +562,56 @@ function mostra(filtrati = locali) {
 
   const isAdmin = ["mauro di girolamo", "admin"].includes(myName.trim().toLowerCase());
 
-  // Se non sei admin, vedi solo i tuoi locali
-  const visibili = isAdmin
-    ? filtrati
-    : filtrati.filter(l => (l.consigliatoDa || "").trim().toLowerCase() === myName.trim().toLowerCase());
+// Tutti vedono tutti i locali
+const visibili = filtrati;
 
-  visibili.forEach((l, idxGlobale) => {
-    const numCommenti = l.commenti ? l.commenti.length : 0;
-    const key = l.nome.trim().toLowerCase() + "|" + l.zona.trim().toLowerCase();
-    const isPref = preferiti.includes(key);
+// Mostra card
+visibili.forEach((l, idxGlobale) => {
+  const numCommenti = l.commenti ? l.commenti.length : 0;
+  const key = l.nome.trim().toLowerCase() + "|" + l.zona.trim().toLowerCase();
+  const isPref = preferiti.includes(key);
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.dataset.idx = idxGlobale;
+  const card = document.createElement("div");
+  card.className = "card";
+  card.dataset.idx = idxGlobale;
 
-    const mostraAzioni = isAdmin || (l.consigliatoDa && l.consigliatoDa.trim().toLowerCase() === myName.trim().toLowerCase());
+  // Mostra le icone di modifica e rimozione solo se:
+  // - sei admin, oppure
+  // - sei l’autore del locale
+  const mostraAzioni = isAdmin || 
+    (l.consigliatoDa && l.consigliatoDa.trim().toLowerCase() === myName.trim().toLowerCase());
 
-    card.innerHTML = `
-      <div>
-        <div><strong>${l.nome}</strong></div>
-        <div>Tipo: ${l.tipo || "—"}</div>
-        <div>Zona: ${l.zona || "—"}</div>
-        <div>Voto: ${l.voto || "—"}</div>
-        <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
-        ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
+  card.innerHTML = `
+    <div>
+      <div><strong>${l.nome}</strong></div>
+      <div>Tipo: ${l.tipo || "—"}</div>
+      <div>Zona: ${l.zona || "—"}</div>
+      <div>Voto: ${l.voto || "—"}</div>
+      <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
+      ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
+    </div>
+    <div class="actions">
+      <button 
+        class="star ${isPref ? "preferito" : ""}" 
+        data-nome="${l.nome.replace(/"/g, "&quot;")}" 
+        data-zona="${l.zona.replace(/"/g, "&quot;")}"
+      >★</button>
+
+      <div class="comment-container">
+        <span class="comment-count">${numCommenti}</span>
+        <button class="comment" title="Commenti" onclick="apriCommenti(${idxGlobale})">💬</button>
       </div>
-      <div class="actions">
- <button 
-  class="star ${isPref ? "preferito" : ""}" 
-  data-nome="${l.nome.replace(/"/g, "&quot;")}" 
-  data-zona="${l.zona.replace(/"/g, "&quot;")}"
->★</button>
 
-        <div class="comment-container">
-          <span class="comment-count">${numCommenti}</span>
-          <button class="comment" title="Commenti" onclick="apriCommenti(${idxGlobale})">💬</button>
-        </div>
-        ${mostraAzioni ? `
-          <button class="edit" title="Modifica" onclick="modifica(${idxGlobale})">✏️</button>
-          <button class="remove" title="Elimina" onclick="rimuovi(${idxGlobale})">🗑️</button>
-        ` : ""}
-      </div>
-    `;
+      ${mostraAzioni ? `
+        <button class="edit" title="Modifica" onclick="modifica(${idxGlobale})">✏️</button>
+        <button class="remove" title="Elimina" onclick="rimuovi(${idxGlobale})">🗑️</button>
+      ` : ""}
+    </div>
+  `;
 
-    lista.appendChild(card);
-  });
+  lista.appendChild(card);
+});
+
   // --- Attiva le stelle (★) come preferiti ---
   document.querySelectorAll(".star").forEach(btn => {
     btn.addEventListener("click", () => {
