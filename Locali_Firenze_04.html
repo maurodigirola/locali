@@ -513,8 +513,7 @@ async function carica() {
   try {
     mostraLoader();
 
-   
-
+    // scarica locali e commenti in parallelo
     const [resLocali, resCommenti] = await Promise.all([
       fetch(SCRIPT_URL_LOCALI),
       fetch(SCRIPT_URL_COMMENTI)
@@ -525,20 +524,26 @@ async function carica() {
 
     // associa i commenti ai locali
     locali.forEach(l => l.commenti = []);
-    commenti.forEach(c => {
-     const loc = locali.find(l =>
-  l.nome.trim().toLowerCase() === c.locale.trim().toLowerCase() &&
-  l.zona.trim().toLowerCase() === c.zona.trim().toLowerCase()
-);
+commenti.forEach(c => {
+  // Compatibilità con diversi nomi di campo
+  const nomeC = (c.locale || c.nome || "").trim().toLowerCase();
+  const zonaC = (c.zona || "").trim().toLowerCase();
 
-      if (loc) {
-        loc.commenti.push({
-          autore: c.autore,
-          data: c.data,
-          testo: c.testo
-        });
-      }
+  const loc = locali.find(l =>
+    l.nome.trim().toLowerCase() === nomeC &&
+    l.zona.trim().toLowerCase() === zonaC
+  );
+
+  if (loc) {
+    if (!loc.commenti) loc.commenti = [];
+    loc.commenti.push({
+      autore: c.autore || "Anonimo",
+      data: c.data || "",
+      testo: c.testo || ""
     });
+  }
+});
+
 
     mostra();
 
@@ -548,7 +553,6 @@ async function carica() {
     nascondiLoader();
   }
 }
-
 function mostra(filtrati = locali) {
   const lista = document.getElementById("lista");
   lista.innerHTML = "";
@@ -560,57 +564,59 @@ function mostra(filtrati = locali) {
 
   const isAdmin = ["mauro di girolamo", "admin"].includes(myName.trim().toLowerCase());
 
-// Tutti vedono tutti i locali
-const visibili = filtrati;
+  // Tutti vedono tutti i locali
+  const visibili = filtrati;
 
-// Mostra card
-visibili.forEach((l, idxGlobale) => {
-  const numCommenti = l.commenti ? l.commenti.length : 0;
-  const key = l.nome.trim().toLowerCase() + "|" + l.zona.trim().toLowerCase();
-  const isPref = preferiti.includes(key);
+  // Mostra card
+  visibili.forEach((l) => {
+    const isPref = isPreferito(l.nome, l.zona);
+    const numCommenti = (l.commenti || []).length;
 
-  const card = document.createElement("div");
-  card.className = "card";
-  card.dataset.idx = idxGlobale;
+    const idxGlobale = locali.findIndex(x => 
+      x.nome === l.nome &&
+      x.zona === l.zona &&
+      (x.consigliatoDa || "—") === (l.consigliatoDa || "—")
+    );
 
-  // Mostra le icone di modifica e rimozione solo se:
-  // - sei admin, oppure
-  // - sei l’autore del locale
-  const mostraAzioni = isAdmin || 
-    (l.consigliatoDa && l.consigliatoDa.trim().toLowerCase() === myName.trim().toLowerCase());
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.idx = idxGlobale;
 
-  card.innerHTML = `
-    <div>
-      <div><strong>${l.nome}</strong></div>
-      <div>Tipo: ${l.tipo || "—"}</div>
-      <div>Zona: ${l.zona || "—"}</div>
-      <div>Voto: ${l.voto || "—"}</div>
-      <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
-      ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
-    </div>
-    <div class="actions">
-      <button 
-        class="star ${isPref ? "preferito" : ""}" 
-        data-nome="${l.nome.replace(/"/g, "&quot;")}" 
-        data-zona="${l.zona.replace(/"/g, "&quot;")}"
-      >★</button>
+    const mostraAzioni = isAdmin || 
+      (l.consigliatoDa && l.consigliatoDa.trim().toLowerCase() === myName.trim().toLowerCase());
 
-      <div class="comment-container">
-        <span class="comment-count">${numCommenti}</span>
-        <button class="comment" title="Commenti" onclick="apriCommenti(${idxGlobale})">💬</button>
+    card.innerHTML = `
+      <div>
+        <div><strong>${l.nome}</strong></div>
+        <div>Tipo: ${l.tipo || "—"}</div>
+        <div>Zona: ${l.zona || "—"}</div>
+        <div>Voto: ${l.voto || "—"}</div>
+        <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
+        ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
       </div>
+      <div class="actions">
+        <button 
+          class="star ${isPref ? "preferito" : ""}" 
+          data-nome="${l.nome.replace(/"/g, "&quot;")}" 
+          data-zona="${l.zona.replace(/"/g, "&quot;")}"
+        >★</button>
 
-      ${mostraAzioni ? `
-        <button class="edit" title="Modifica" onclick="modifica(${idxGlobale})">✏️</button>
-        <button class="remove" title="Elimina" onclick="rimuovi(${idxGlobale})">🗑️</button>
-      ` : ""}
-    </div>
-  `;
+        <div class="comment-container">
+          <span class="comment-count">${numCommenti}</span>
+          <button class="comment" title="Commenti" onclick="apriCommenti('${l.nome.replace(/'/g, "\\'")}', '${l.zona.replace(/'/g, "\\'")}')">💬</button>
+        </div>
 
-  lista.appendChild(card);
-});
+        ${mostraAzioni ? `
+          <button class="edit" title="Modifica" onclick="modifica(${idxGlobale})">✏️</button>
+          <button class="remove" title="Elimina" onclick="rimuovi(${idxGlobale})">🗑️</button>
+        ` : ""}
+      </div>
+    `;
 
-  // --- Attiva le stelle (★) come preferiti ---
+    lista.appendChild(card);
+  });
+
+  // Attiva le stelle (★) come preferiti
   document.querySelectorAll(".star").forEach(btn => {
     btn.addEventListener("click", () => {
       const nome = btn.dataset.nome;
@@ -1078,36 +1084,40 @@ async function rimuovi(i) {
 
 let localeSelezionato = null;
 
-function apriCommenti(idx) {
-  localeSelezionato = idx; // ricordo quale locale è stato cliccato
+function apriCommenti(nome, zona) {
+  const idx = locali.findIndex(l => 
+    l.nome.trim().toLowerCase() === nome.trim().toLowerCase() &&
+    l.zona.trim().toLowerCase() === zona.trim().toLowerCase()
+  );
+  if (idx === -1) {
+    mostraPopup("Errore", "Locale non trovato nei dati originali.");
+    return;
+  }
+
+  localeSelezionato = idx;
   const loc = locali[idx];
 
-  // Se il locale non ha ancora commenti, inizializza un array vuoto
   if (!loc.commenti) loc.commenti = [];
 
-  // Mostra la lista dei commenti
   const div = document.getElementById("listaCommenti");
   if (loc.commenti.length === 0) {
     div.innerHTML = "<p>Nessun commento ancora.</p>";
   } else {
     div.innerHTML = loc.commenti
-  .sort((a, b) => new Date(b.data) - new Date(a.data)) // ordina per data decrescente
-  .map(c => `
-    <div style="margin-bottom:8px; border-bottom:1px solid #ccc; padding-bottom:5px;">
-      <strong>${c.autore}</strong> <small>${c.data}</small><br>
-      ${c.testo}
-    </div>
-  `).join("");
-
+      .sort((a, b) => new Date(b.data) - new Date(a.data))
+      .map(c => `
+        <div style="margin-bottom:8px; border-bottom:1px solid #ccc; padding-bottom:5px;">
+          <strong>${c.autore}</strong> <small>${c.data}</small><br>
+          ${c.testo}
+        </div>
+      `).join("");
   }
 
-
-  // Pulisce il campo nuovo commento
   document.getElementById("nuovoCommento").value = "";
-
-  // Mostra il popup
   document.getElementById("popupCommenti").style.display = "flex";
 }
+
+
 
 function chiudiCommenti() {
   document.getElementById("popupCommenti").style.display = "none";
