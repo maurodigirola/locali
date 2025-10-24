@@ -588,7 +588,12 @@ function mostra(filtrati = locali) {
         ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
       </div>
       <div class="actions">
-        <button class="star ${isPref ? "preferito" : ""}" onclick="togglePreferito('${l.nome}', '${l.zona}')">★</button>
+ <button 
+  class="star ${isPref ? "preferito" : ""}" 
+  data-nome="${l.nome.replace(/"/g, "&quot;")}" 
+  data-zona="${l.zona.replace(/"/g, "&quot;")}"
+>★</button>
+
         <div class="comment-container">
           <span class="comment-count">${numCommenti}</span>
           <button class="comment" title="Commenti" onclick="apriCommenti(${idxGlobale})">💬</button>
@@ -602,7 +607,17 @@ function mostra(filtrati = locali) {
 
     lista.appendChild(card);
   });
+  // --- Attiva le stelle (★) come preferiti ---
+  document.querySelectorAll(".star").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const nome = btn.dataset.nome;
+      const zona = btn.dataset.zona;
+      togglePreferito(nome, zona);
+      btn.classList.toggle("preferito");
+    });
+  });
 }
+
 
 
 function mostraPopup(titolo, messaggio) {
