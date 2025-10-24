@@ -47,8 +47,48 @@
   align-items: center; /* centra tutti i bottoni nella colonna */
   gap: 8px;
 }
+/* --- STILE STELLA PREFERITO --- */
+.star {
+  background-color: #e0e0e0; /* cerchio grigio */
+  color: #888; /* stella grigia */
+  font-size: 16px;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.2s, color 0.2s;
+}
+
+.star:hover {
+  transform: scale(1.1);
+}
+
+/* stella selezionata: cerchio e stella gialli */
+.star.preferito {
+  background-color: #ffb400; /* giallo pieno */
+  color: white; /* stella bianca */
+}
+
     .remove { background: #ff4d4d; border: none; border-radius: 50%; color: white; font-weight: bold; width: 30px; height: 30px; cursor: pointer; }
-    .edit { background: #ffa500; border: none; border-radius: 50%; color: white; font-weight: bold; width: 30px; height: 30px; cursor: pointer; }
+ .edit {
+  background-color: #3498db; /* blu elegante */
+  border: none;
+  border-radius: 50%;
+  color: white;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
 .comment {
   background: #ff9966; /* puoi cambiare colore */
   border: none;
@@ -111,26 +151,56 @@
   line-height: 1;
   padding: 0;
 }
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Contenitore commento */
 .comment-container {
+  position: relative;
+  width: 32px; /* stessa larghezza delle altre icone */
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* Numero dei commenti */
 .comment-count {
-  margin-right: 6px;   /* spazio tra numero e nuvoletta */
+  position: absolute;
+  right: 100%;        /* si posiziona esattamente a sinistra del cerchio */
+  margin-right: 6px;  /* distanza dal bordo del cerchio */
+  top: 50%;
+  transform: translateY(-50%);
   font-weight: bold;
   color: #ff7e5f;
   font-size: 14px;
-  min-width: 14px;
   text-align: right;
+  line-height: 1;
+  min-width: 10px;    /* evita "salti" quando da 1 cifra passa a 2 */
 }
 
-.comment-container .comment-count {
+/* Bottone nuvoletta */
+.comment {
+  background-color: #ff9966;
+  border: none;
+  border-radius: 50%;
+  color: white;
   font-weight: bold;
-  color: #ff7e5f;
-  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
 }
+
 
 
   </style>
@@ -146,6 +216,11 @@
     <div class="dropdown" id="consigliatoFilter"></div>
     <div class="dropdown" id="glutenFilter"></div>
   </div>
+<div class="filters">
+  <label style="display:flex;align-items:center;gap:6px;">
+    <input type="checkbox" id="filtroPreferiti"> Solo preferiti ⭐
+  </label>
+</div>
   <div class="filter-buttons">
     <button onclick="filtra()">Filtra</button><br><br>
     <button onclick="randomLocale()">Casuale 🎲</button>
@@ -322,6 +397,7 @@ const SCRIPT_URL_LOCALI = "https://script.google.com/macros/s/AKfycbyf88jHp8K5e9
 const SCRIPT_URL_COMMENTI = "https://script.google.com/macros/s/AKfycbz4TW5Ixv7uSjhtG_nsoDku0P0TxrbWsFFRmwNdWxxRJfCCW_lbwCP59CG6P9eysfRzVA/exec";
 
 
+
 const ZONE_API_URL = "https://script.google.com/macros/s/AKfycbxWxQQnGhd0nU1hpZoXOwmMm9E_jlO8FSjbRHj_x2x-pSItDxFKUahGpoq5yH9KG9pG/exec";
 let ZONE_CACHE = [];
 
@@ -331,17 +407,6 @@ async function caricaZone() {
     ZONE_CACHE = await res.json(); // [{zona, latitudine, longitudine}, ...]
     ZONE_CACHE.sort((a,b) => a.zona.localeCompare(b.zona, 'it', {sensitivity: 'base'}));
 
-async function caricaZone() {
-  try {
-    const res = await fetch(ZONE_API_URL);
-    ZONE_CACHE = await res.json(); // [{zona, latitudine, longitudine}, ...]
-    ZONE_CACHE.sort((a,b) => a.zona.localeCompare(b.zona, 'it', {sensitivity: 'base'}));
-    console.log("Zone caricate:", ZONE_CACHE.length);
-  } catch (e) {
-    console.error('Errore nel caricamento delle zone:', e);
-  }
-}
-
 
   } catch (e) {
     console.error('Errore nel caricamento delle zone:', e);
@@ -349,6 +414,8 @@ async function caricaZone() {
     sel.innerHTML = `<option value="">(errore nel caricamento)</option>`;
   }
 }
+
+
 
 function distanza(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -370,16 +437,77 @@ function ottieniPosizioneUtente() {
 }
 
 
-    let myName = localStorage.getItem("myName");
-  if (!myName) {
+let myName = localStorage.getItem("myName");
+if (!myName) {
   myName = prompt("Inserisci nome e cognome:");
   if (myName) {
     myName = myName.trim();
+    if (myName.toLowerCase() === "admin") myName = "Mauro Di Girolamo"; // 👈 qui
     localStorage.setItem("myName", myName);
   } else {
     myName = "Anonimo";
   }
 }
+myName = myName.trim();
+localStorage.setItem("myName", myName);
+
+// --- PREFERITI --- //
+const SCRIPT_URL_PREFERITI = "https://script.google.com/macros/s/AKfycbxVZbNQEGqfQjW9n9xlm_uIAvNPJgYAC9zeEYU4JF2HNrWoUnG7vOXhhHTll7-iXCTr/exec";
+
+let preferiti = JSON.parse(localStorage.getItem("preferiti")) || [];
+
+// Carica i preferiti dell’utente dal foglio Google
+async function caricaPreferitiDaSheet() {
+  try {
+    const res = await fetch(`${SCRIPT_URL_PREFERITI}?utente=${encodeURIComponent(myName)}`);
+    const dati = await res.json();
+    preferiti = dati
+      .filter(r => r.stato === "si")
+      .map(r => r.nome.trim().toLowerCase() + "|" + r.zona.trim().toLowerCase());
+    localStorage.setItem("preferiti", JSON.stringify(preferiti));
+    console.log("✅ Preferiti caricati da Sheet:", preferiti);
+  } catch (e) {
+    console.error("❌ Errore nel caricamento preferiti da Sheet:", e);
+  }
+}
+
+// Aggiunge o rimuove un preferito
+async function togglePreferito(nome, zona) {
+  const key = nome.trim().toLowerCase() + "|" + zona.trim().toLowerCase();
+  const idx = preferiti.indexOf(key);
+  let stato = "no";
+
+  if (idx >= 0) {
+    preferiti.splice(idx, 1); // rimuovi
+  } else {
+    preferiti.push(key); // aggiungi
+    stato = "si";
+  }
+
+  localStorage.setItem("preferiti", JSON.stringify(preferiti));
+
+  // aggiorna visivamente solo la stella cliccata
+  const card = document.querySelector(`.card button.star[onclick*="'${nome}'"]`);
+  if (card) card.classList.toggle("preferito");
+
+  // salva su Sheet
+  try {
+    await fetch(SCRIPT_URL_PREFERITI, {
+      method: "POST",
+      body: JSON.stringify({
+        utente: myName,
+        nome: nome,
+        zona: zona,
+        stato: stato
+      })
+    });
+    console.log(`📡 Preferito aggiornato su Sheet: ${nome} (${stato})`);
+  } catch (e) {
+    console.error("❌ Errore salvataggio preferito su Sheet:", e);
+  }
+}
+
+
     let locali = [];
 
     function salva() { localStorage.setItem("locali", JSON.stringify(locali)); }
@@ -387,7 +515,8 @@ async function carica() {
   try {
     mostraLoader();
 
-    // scarica locali e commenti in parallelo
+   
+
     const [resLocali, resCommenti] = await Promise.all([
       fetch(SCRIPT_URL_LOCALI),
       fetch(SCRIPT_URL_COMMENTI)
@@ -421,6 +550,61 @@ async function carica() {
     nascondiLoader();
   }
 }
+
+function mostra(filtrati = locali) {
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  if (filtrati.length === 0) {
+    lista.innerHTML = "<p style='text-align:center;color:#999;'>Nessun locale trovato</p>";
+    return;
+  }
+
+  const isAdmin = ["mauro di girolamo", "admin"].includes(myName.trim().toLowerCase());
+
+  // Se non sei admin, vedi solo i tuoi locali
+  const visibili = isAdmin
+    ? filtrati
+    : filtrati.filter(l => (l.consigliatoDa || "").trim().toLowerCase() === myName.trim().toLowerCase());
+
+  visibili.forEach((l, idxGlobale) => {
+    const numCommenti = l.commenti ? l.commenti.length : 0;
+    const key = l.nome.trim().toLowerCase() + "|" + l.zona.trim().toLowerCase();
+    const isPref = preferiti.includes(key);
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.idx = idxGlobale;
+
+    const mostraAzioni = isAdmin || (l.consigliatoDa && l.consigliatoDa.trim().toLowerCase() === myName.trim().toLowerCase());
+
+    card.innerHTML = `
+      <div>
+        <div><strong>${l.nome}</strong></div>
+        <div>Tipo: ${l.tipo || "—"}</div>
+        <div>Zona: ${l.zona || "—"}</div>
+        <div>Voto: ${l.voto || "—"}</div>
+        <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
+        ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
+      </div>
+      <div class="actions">
+        <button class="star ${isPref ? "preferito" : ""}" onclick="togglePreferito('${l.nome}', '${l.zona}')">★</button>
+        <div class="comment-container">
+          <span class="comment-count">${numCommenti}</span>
+          <button class="comment" title="Commenti" onclick="apriCommenti(${idxGlobale})">💬</button>
+        </div>
+        ${mostraAzioni ? `
+          <button class="edit" title="Modifica" onclick="modifica(${idxGlobale})">✏️</button>
+          <button class="remove" title="Elimina" onclick="rimuovi(${idxGlobale})">🗑️</button>
+        ` : ""}
+      </div>
+    `;
+
+    lista.appendChild(card);
+  });
+}
+
+
 function mostraPopup(titolo, messaggio) {
   document.getElementById("popupTitolo").textContent = titolo || "";
   document.getElementById("popupMessaggio").textContent = messaggio || "";
@@ -585,56 +769,13 @@ creaDropdown("zonaFilter", "Tutte le zone", zone.map(z => z === "__vicina__" ? "
       if (!e.target.closest(".menu")) document.querySelectorAll(".menu").forEach(m => m.classList.remove("show"));
     });
 
-function mostra(lista = locali) {
-  aggiornaFiltri();
-  const c = document.getElementById("lista");
-  c.innerHTML = "";
-  lista.forEach((loc) => {
-    const idxGlobale = locali.findIndex(x => 
-      x.nome === loc.nome &&
-      x.zona === loc.zona &&
-      (x.consigliatoDa || "—") === (loc.consigliatoDa || "—")
-    );
-
-    // Controlli permessi
-   const isOwner = (loc.consigliatoDa || "").trim().toLowerCase() === myName.trim().toLowerCase();
-
-   const isAdmin = myName.trim().toLowerCase() === "mauro di girolamo";
-
-
-    // Conta i commenti
-    const numCommenti = loc.commenti ? loc.commenti.length : 0;
-
-    // Costruzione HTML
-    c.innerHTML += `
-      <div class="card" data-idx="${idxGlobale}">
-        <div>
-          <strong>${loc.nome}</strong> ${loc.glutenFree==="si" ? "🌾🚫" : ""}<br>
-          Zona: ${loc.zona} <br>
-          Tipo: ${loc.tipo} <br>
-          Voto: ${loc.voto || "—"}<br>
-          Consigliato da: ${loc.consigliatoDa || "—"}<br>
-          <a href="${loc.link}" target="_blank">Link</a>
-        </div>
-        <div class="actions">
-          ${
-            (isOwner || isAdmin)
-              ? `
-                <button class="edit" onclick="modifica(${idxGlobale})">✎</button>
-                <button class="remove" onclick="rimuovi(${idxGlobale})">×</button>
-              `
-              : ""
-          }
-<div class="comment-container">
-  <button class="comment" title="Commenti" onclick="apriCommenti(${idxGlobale})">💬</button>
-  <span class="comment-count">${loc.commenti ? loc.commenti.length : 0}</span>
-</div>
-
-
-        </div>
-      </div>`;
-  });
+// Controlla se un locale è nei preferiti
+function isPreferito(nome, zona) {
+  const key = nome.trim().toLowerCase() + "|" + zona.trim().toLowerCase();
+  return preferiti.includes(key);
 }
+
+
 
 // Funzione per ottenere latitudine e longitudine da una zona
 async function geocodificaZona(zona) {
@@ -1095,7 +1236,13 @@ nascondiLoader(); // 👈 nascondi il loader appena finito di calcolare la zona 
     ) &&
     (gf.length === 0 || gf.includes(l.glutenFree))
   );
+const soloPref = document.getElementById("filtroPreferiti").checked;
+const fFinale = soloPref
+  ? f.filter(l => isPreferito(l.nome, l.zona))
+  : f;
 
+mostra(fFinale);
+return;
   mostra(f);
 }
 
@@ -1195,22 +1342,28 @@ nascondiLoader(); // 👈 nascondi il loader appena finito di calcolare la zona 
 function chiudiPopupAggiunto() {
   document.getElementById("popupAggiunto").style.display = "none";
 }
-caricaZone();
-  carica(); 
-  </script>
+(async () => {
+  mostraLoader();
 
-   
+  await caricaZone();
+  await caricaPreferitiDaSheet();
+  await carica();
 
-  <!-- Service worker -->
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('Service Worker registrato'))
-        .catch(err => console.log('Errore Service Worker:', err));
-    });
-  }
-  </script>
+  aggiornaFiltri(); // 👈 serve per creare i menu filtro
+  nascondiLoader();
+})();
+</script>
+
+<!-- Service worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('Service Worker registrato'))
+      .catch(err => console.log('Errore Service Worker:', err));
+  });
+}
+</script>
 
   <!-- Pulsante installa PWA -->
   <script>
@@ -1238,7 +1391,6 @@ caricaZone();
 
 </body>
 </html>
-
 
 
 
