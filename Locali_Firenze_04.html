@@ -405,16 +405,14 @@ async function caricaZone() {
   try {
     const res = await fetch(ZONE_API_URL);
     ZONE_CACHE = await res.json(); // [{zona, latitudine, longitudine}, ...]
-    ZONE_CACHE.sort((a,b) => a.zona.localeCompare(b.zona, 'it', {sensitivity: 'base'}));
-
-
+    ZONE_CACHE.sort((a, b) => a.zona.localeCompare(b.zona, 'it', {sensitivity: 'base'}));
+    console.log("✅ Zone caricate:", ZONE_CACHE.length);
   } catch (e) {
-    console.error('Errore nel caricamento delle zone:', e);
+    console.error("❌ Errore nel caricamento delle zone:", e);
     const sel = document.getElementById('zona');
-    sel.innerHTML = `<option value="">(errore nel caricamento)</option>`;
+    if (sel) sel.innerHTML = `<option value="">(errore nel caricamento)</option>`;
   }
 }
-
 
 
 function distanza(lat1, lon1, lat2, lon2) {
@@ -1411,7 +1409,6 @@ if ('serviceWorker' in navigator) {
 
 </body>
 </html>
-
 
 
 
