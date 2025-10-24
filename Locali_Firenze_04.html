@@ -586,13 +586,16 @@ function mostra(filtrati = locali) {
       (l.consigliatoDa && l.consigliatoDa.trim().toLowerCase() === myName.trim().toLowerCase());
 
     card.innerHTML = `
-      <div>
-        <div><strong>${l.nome}</strong></div>
-        <div>Tipo: ${l.tipo || "—"}</div>
-        <div>Zona: ${l.zona || "—"}</div>
-        <div>Voto: ${l.voto || "—"}</div>
-        <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
-        ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
+<div>
+  <div><strong>${l.nome}</strong> ${l.glutenFree === "si" ? `<span title="Gluten Free" style="font-size:18px;">🌾🚫</span>` : ""}</div>
+  <div>Tipo: ${l.tipo || "—"}</div>
+  <div>Zona: ${l.zona || "—"}</div>
+  <div>Voto: ${l.voto || "—"}</div>
+  <div>Consigliato da: ${l.consigliatoDa || "—"}</div>
+  ${l.link ? `<div><a href="${l.link}" target="_blank">Link Google</a></div>` : ""}
+</div>
+
+
       </div>
       <div class="actions">
         <button 
